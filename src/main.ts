@@ -1,19 +1,41 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 
 async function bootstrap() {
-  const PORT = process.env.PORT
   const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder()
-      .setTitle('NestJS chat backend')
-      .setDescription('Rest API documentation')
-      .setVersion('1.0.0')
-      .build()
-  const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup('/api/docs', app, document)
+  const configService = app.get<ConfigService>(ConfigService);
 
-  await app.listen(PORT || 9000, () => console.log(`Server has been started on PORT: ${PORT}`));
+  // Swagger
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Chat Api')
+    .setDescription(
+      'There will be shown all of the API routes that are exist to this moment.',
+    )
+    .setVersion('1.0.0')
+    .addBearerAuth({
+      description: `Pass here a JWT`,
+      name: 'Authorization',
+      scheme: 'Bearer',
+      type: 'http',
+      in: 'Header',
+    })
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      docExpansion: 'none',
+      requestInterceptor: (req) => {
+        req.credentials = 'include';
+        return req;
+      },
+    },
+  });
+
+  await app.listen(configService.get('PORT'));
+  console.log(configService.get('HOST'));
 }
 bootstrap();

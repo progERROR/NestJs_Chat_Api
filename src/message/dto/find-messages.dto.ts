@@ -1,3 +1,3 @@
 export class FindMessagesDto {
-    readonly chatId: number;
+  readonly chatId: number;
 }
